@@ -9,7 +9,7 @@ import numpy as np
 import csv as csv
 from sklearn.ensemble import RandomForestClassifier
 
-csv_file_object = csv.reader(open('../csv/train.csv', 'rb')) #Load in the training csv file
+csv_file_object = csv.reader(open('csv/train.csv', 'rb')) #Load in the training csv file
 header = csv_file_object.next() #Skip the fist line as it is a header
 train_data=[] #Creat a variable called 'train_data'
 for row in csv_file_object: #Skip through each row in the csv file

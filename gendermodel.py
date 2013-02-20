@@ -8,7 +8,7 @@ Date : 18th September, 2012
 import csv as csv
 import numpy as np
 
-csv_file_object = csv.reader(open('../csv/train.csv', 'rb')) #Load in the csv file
+csv_file_object = csv.reader(open('csv/train.csv', 'rb')) #Load in the csv file
 header = csv_file_object.next() #Skip the fist line as it is a header
 data=[] #Creat a variable called 'data'
 for row in csv_file_object: #Skip through each row in the csv file
@@ -46,13 +46,13 @@ print 'Proportion of men who survived is %s' % proportion_men_survived
 #Now I have my indicator I can read in the test file and write out
 #if a women then survived(1) if a man then did not survived (0)
 #1st Read in test
-test_file_obect = csv.reader(open('../csv/test.csv', 'rb'))
+test_file_obect = csv.reader(open('csv/test.csv', 'rb'))
 header = test_file_obect.next()
 
 #Now also open the a new file so we can write to it call it something
 #descriptive
 
-open_file_object = csv.writer(open("../csv/genderbasedmodelpy.csv", "wb"))
+open_file_object = csv.writer(open("csv/genderbasedmodelpy.csv", "wb"))
 
 for row in test_file_obect:
     if row[2] == 'female':

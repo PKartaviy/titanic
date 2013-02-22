@@ -8,10 +8,42 @@ Date : 18th September, 2012
 import csv as csv
 import numpy as np
 import operator
+import random as rn 
 
 id = { 'pclass': 1, 'sex': 3, 'age': 4, 'sibsp':  5, 'parch': 6, 'embarked': 10}
 max = {'pclass': 3, 'sex': 2, 'age': 8, 'sibsp':  9, 'parch': 10, 'embarked': 3}
 
+def splitData():
+    csv_file_object = csv.reader(open('csv/train.csv', 'rb')) #Load in the csv file
+    header = csv_file_object.next() #Skip the fist line as it is a header
+    data=[] #Creat a variable called 'data'
+    test_data = []
+    for row in csv_file_object: #Skip through each row in the csv file
+        if rn.random() < 0.5:
+            data.append(row) #adding each row to the data variable
+        else:
+            test_data.append(row)
+            
+    data = np.array(data) #Then convert from a list to an array
+    test_data = np.array(test_data)
+    bakeData(data)
+    bakeData(test_data)
+
+    return [data, test_data]
+
+def getSubmitData():
+    test_file_obect = csv.reader(open('csv/test.csv', 'rb'))
+    header = test_file_obect.next()
+
+    submit_data = []
+    for row in test_file_obect:
+        row.insert(0,'7')
+        submit_data.append(row)
+    submit_data = np.array(submit_data)
+    bakeData(submit_data)
+    
+    return submit_data
+    
 def bakeData(data):
     rows = np.size(data[0::, 0])
     columns = np.size(data[0, 0::])
@@ -50,13 +82,10 @@ def calcEntropy(data):
             if(numPassengersWithValue>5):
                 survivingRate = float(survivedPassengersWithValue)/numPassengersWithValue
             weights[key].append( survivingRate)
-
-    for key in weights.keys():
-        print key, weights[key]
     
     return weights
 
-def calcProbability(row, weights):
+def predict(row, weights):
     #just calc as average sum
     probability = 0.0
     n = 0
@@ -66,69 +95,43 @@ def calcProbability(row, weights):
         probability += weights[key][ int(row[col]) ]
     probability = probability / n
     
-    return probability
+    if probability > 0.5:
+        return 1
+    else:
+        return 0
 
-csv_file_object = csv.reader(open('csv/train.csv', 'rb')) #Load in the csv file
-header = csv_file_object.next() #Skip the fist line as it is a header
-data=[] #Creat a variable called 'data'
-for row in csv_file_object: #Skip through each row in the csv file
-    data.append(row) #adding each row to the data variable
-data = np.array(data) #Then convert from a list to an array
+def checkPrediction(weights, test_data):
+    n = 0.0
+    correct = 0.0
+    for row in test_data:
+        n += 1.0
+        if predict(row, weights) == int(row[0]) :
+            correct += 1.0
+    
+    return correct/n
 
-#Now I have an array of 11 columns and 891 rows
-#I can access any element I want so the entire first column would
-#be data[0::,0].astype(np.flaot) This means all of the columen and column 0
-#I have to add the astype command
-#as when reading in it thought it was  a string so needed to convert
+def visualizeWeights(weights):
+    for key in weights.keys():
+        print key, weights[key]
+        
+attemptNum = 0
+rateSum = 0.0
+for i in range(10):
+    [data, test_data] = splitData()
+    weights = calcEntropy(data)
 
-bakeData(data)
-weights = calcEntropy(data)
+    rateSum += checkPrediction(weights, test_data)
+    attemptNum += 1
+print "Prediction rate on test_data is ", rateSum / attemptNum
 
-number_passengers = np.size(data[0::,0].astype(np.float))
-number_survived = np.sum(data[0::,0].astype(np.float))
-proportion_survivors = number_passengers / number_survived
-
-# I can now find the stats of all the women on board
-women_only_stats = data[0::,3] == '0' #This finds where all the women are
-men_only_stats = data[0::,3] != '0' #This finds where all the men are
-                                         # != means not equal
-
-#I can now find for example the ages of all the women by just placing
-#women_only_stats in the '0::' part of the array index. You can test it by
-#placing it in the 4 column and it should all read 'female'
-
-women_onboard = data[women_only_stats,0].astype(np.float)
-men_onboard = data[men_only_stats,0].astype(np.float)
-
-proportion_women_survived = np.sum(women_onboard) / np.size(women_onboard)
-proportion_men_survived = np.sum(men_onboard) / np.size(men_onboard)
-
-print 'Proportion of women who survived is %s' % proportion_women_survived
-print 'Proportion of men who survived is %s' % proportion_men_survived
-
-#Now I have my indicator I can read in the test file and write out
-#if a women then survived(1) if a man then did not survived (0)
-#1st Read in test
-test_file_obect = csv.reader(open('csv/test.csv', 'rb'))
-header = test_file_obect.next()
-
+visualizeWeights(weights)
 #Now also open the a new file so we can write to it call it something
 #descriptive
 
+submit_data = getSubmitData()
 open_file_object = csv.writer(open("csv/genderbasedmodelpy.csv", "wb"))
-
-test_data = []
-for row in test_file_obect:
-    row.insert(0,'7')
-    test_data.append(row)
-test_data = np.array(test_data)
-bakeData(test_data)
-
-for row in test_data:
-    if calcProbability(row, weights) > 0.5 :
-        row[0] = '1' #Insert the prediciton at the start of the row
-        open_file_object.writerow(row) #Write the row to the file
-    else:
-        row[0] = '0'
-        open_file_object.writerow(row)
+for row in submit_data:
+    row[0] = predict(row, weights) #Insert the prediciton at the start of the row
+    open_file_object.writerow(row) #Write the row to the file
+    
 
